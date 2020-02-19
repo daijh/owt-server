@@ -12,6 +12,8 @@
 #include "WebRtcConnection.h"
 #include "MediaStream.h"
 
+#include "SyncGroupWrapper.h"
+
 using namespace v8;
 
 Persistent<Function> VideoFramePacketizer::constructor;
@@ -32,6 +34,7 @@ void VideoFramePacketizer::Init(v8::Local<v8::Object> exports) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "enable", enable);
   NODE_SET_PROTOTYPE_METHOD(tpl, "ssrc", getSsrc);
   NODE_SET_PROTOTYPE_METHOD(tpl, "setFoV", setFoV);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "setSyncGroup", setSyncGroup);
 
   constructor.Reset(isolate, tpl->GetFunction());
   exports->Set(String::NewFromUtf8(isolate, "VideoFramePacketizer"), tpl->GetFunction());
@@ -122,5 +125,18 @@ void VideoFramePacketizer::setFoV(const v8::FunctionCallbackInfo<v8::Value>& arg
   int yaw = args[0]->Int32Value();
   int pitch = args[1]->Int32Value();
   me->setFoV(yaw, pitch);
+}
+
+void VideoFramePacketizer::setSyncGroup(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  Isolate* isolate = Isolate::GetCurrent();
+  HandleScope scope(isolate);
+
+  VideoFramePacketizer* obj = ObjectWrap::Unwrap<VideoFramePacketizer>(args.Holder());
+  owt_base::VideoFramePacketizer* me = obj->me;
+
+  SyncGroup* param = node::ObjectWrap::Unwrap<SyncGroup>(args[0]->ToObject());
+  owt_base::SyncGroup* syncGroup = param->me;
+
+  me->SetSyncGroup(syncGroup);
 }
 

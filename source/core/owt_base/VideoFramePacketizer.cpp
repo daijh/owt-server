@@ -34,6 +34,7 @@ VideoFramePacketizer::VideoFramePacketizer(
     , m_sendFrameCount(0)
     , m_clock(nullptr)
     , m_timeStampOffset(0)
+    , m_sync_group(NULL)
 {
     video_sink_ = nullptr;
     m_ssrc = m_ssrc_generator->CreateSsrc();
@@ -266,7 +267,17 @@ static void dump(void* index, FrameFormat format, uint8_t* buf, int len)
     }
 }
 
-void VideoFramePacketizer::onFrame(const Frame& inFrame)
+void VideoFramePacketizer::onFrame(const Frame& frame)
+{
+    if (m_sync_group) {
+        m_sync_group->sendVideoFrame(frame);
+        return;
+    }
+
+    onFrameInternal(frame);
+}
+
+void VideoFramePacketizer::onFrameInternal(const Frame& inFrame)
 {
     Frame frame = inFrame;
 
@@ -459,6 +470,19 @@ void VideoFramePacketizer::setFoV(int32_t yaw, int32_t pitch) {
     if (m_tilesMerger)
         m_tilesMerger->setFoV(yaw, pitch);
 #endif
+}
+
+void VideoFramePacketizer::SetSyncGroup(SyncGroup *syncGroup)
+{
+    ELOG_INFO("%s", __FUNCTION__);
+
+    m_sync_group = syncGroup;
+    m_sync_group->setVideoSyncedFrameListener(this);
+}
+
+void VideoFramePacketizer::OnSyncedFrame(const Frame& frame)
+{
+    onFrameInternal(frame);
 }
 
 }

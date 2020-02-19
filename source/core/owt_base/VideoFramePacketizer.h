@@ -29,6 +29,8 @@
 #include "HEVCTilesMerger.h"
 #endif
 
+#include "SyncGroup.h"
+
 namespace owt_base {
 /**
  * This is the class to accept the encoded frame with the given format,
@@ -40,7 +42,8 @@ class VideoFramePacketizer : public FrameDestination,
                              public erizo::FeedbackSink,
                              public erizoExtra::RTPDataReceiver,
                              public webrtc::BitrateObserver,
-                             public webrtc::RtcpIntraFrameObserver {
+                             public webrtc::RtcpIntraFrameObserver,
+                             public SyncedFrameListener {
     DECLARE_LOGGER();
 
 public:
@@ -80,10 +83,17 @@ public:
     // Implements webrtc::BitrateObserver.
     void OnNetworkChanged(const uint32_t target_bitrate, const uint8_t fraction_loss, const int64_t rtt);
 
+    void SetSyncGroup(SyncGroup *syncGroup);
+
+    // Implements SyncedFrameListener.
+    void OnSyncedFrame(const Frame& frame);
+
 private:
     bool init(bool enableRed, bool enableUlpfec, bool enableTransportcc, uint32_t transportccExt);
     void close();
     bool setSendCodec(FrameFormat, unsigned int width, unsigned int height);
+
+    void onFrameInternal(const Frame& frame);
 
     bool m_enabled;
     bool m_enableDump;
@@ -119,6 +129,8 @@ private:
 #ifdef _ENABLE_HEVC_TILES_MERGER_
     boost::shared_ptr<HEVCTilesMerger> m_tilesMerger;
 #endif
+
+    SyncGroup *m_sync_group;
 };
 
 }

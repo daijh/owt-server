@@ -18,6 +18,7 @@
 #include <MediaDefinitionExtra.h>
 #include <webrtc/modules/rtp_rtcp/include/rtp_rtcp.h>
 
+#include "SyncGroup.h"
 
 namespace owt_base {
 
@@ -29,7 +30,8 @@ class WebRTCTaskRunner;
 class AudioFramePacketizer : public FrameDestination,
                              public erizo::MediaSource,
                              public erizo::FeedbackSink,
-                             public erizoExtra::RTPDataReceiver {
+                             public erizoExtra::RTPDataReceiver,
+                             public SyncedFrameListener {
     DECLARE_LOGGER();
 
 public:
@@ -47,11 +49,18 @@ public:
     // Implements RTPDataReceiver.
     void receiveRtpData(char*, int len, erizoExtra::DataType, uint32_t channelId);
 
+    void SetSyncGroup(SyncGroup *syncGroup);
+
+    // Implements SyncedFrameListener.
+    void OnSyncedFrame(const Frame& frame);
+
 private:
     bool init();
     bool setSendCodec(FrameFormat format);
     void close();
     void updateSeqNo(uint8_t* rtp);
+
+    void onFrameInternal(const Frame& frame);
 
     bool m_enabled;
     boost::scoped_ptr<webrtc::RtpRtcp> m_rtpRtcp;
@@ -70,6 +79,8 @@ private:
     ///// NEW INTERFACE ///////////
     int deliverFeedback_(std::shared_ptr<erizo::DataPacket> data_packet);
     int sendPLI();
+
+    SyncGroup *m_sync_group;
 };
 
 }

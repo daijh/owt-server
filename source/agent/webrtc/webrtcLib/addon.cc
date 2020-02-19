@@ -2,6 +2,7 @@
 #include "AudioFramePacketizerWrapper.h"
 #include "VideoFrameConstructorWrapper.h"
 #include "VideoFramePacketizerWrapper.h"
+#include "SyncGroupWrapper.h"
 #include "WebRtcConnection.h"
 #include "ThreadPool.h"
 #include "IOThreadPool.h"
@@ -20,6 +21,7 @@ void InitAll(Handle<Object> exports) {
   AudioFramePacketizer::Init(exports);
   VideoFrameConstructor::Init(exports);
   VideoFramePacketizer::Init(exports);
+  SyncGroup::Init(exports);
 }
 
 NODE_MODULE(addon, InitAll)

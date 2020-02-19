@@ -20,6 +20,7 @@ AudioFramePacketizer::AudioFramePacketizer()
     , m_seqNo(0)
     , m_ssrc(0)
     , m_ssrc_generator(SsrcGenerator::GetSsrcGenerator())
+    , m_sync_group(NULL)
 {
     audio_sink_ = nullptr;
     m_ssrc = m_ssrc_generator->CreateSsrc();
@@ -74,8 +75,17 @@ void AudioFramePacketizer::receiveRtpData(char* buf, int len, erizoExtra::DataTy
     audio_sink_->deliverAudioData(std::make_shared<erizo::DataPacket>(0, buf, len, erizo::AUDIO_PACKET));
 }
 
-
 void AudioFramePacketizer::onFrame(const Frame& frame)
+{
+    if (m_sync_group) {
+        m_sync_group->sendAudioFrame(frame);
+        return;
+    }
+
+    onFrameInternal(frame);
+}
+
+void AudioFramePacketizer::onFrameInternal(const Frame& frame)
 {
     if (!m_enabled) {
         return;
@@ -162,6 +172,19 @@ void AudioFramePacketizer::updateSeqNo(uint8_t* rtp) {
 
 int AudioFramePacketizer::sendPLI() {
     return 0;
+}
+
+void AudioFramePacketizer::SetSyncGroup(SyncGroup *syncGroup)
+{
+    ELOG_INFO("%s", __FUNCTION__);
+
+    m_sync_group = syncGroup;
+    m_sync_group->setAudioSyncedFrameListener(this);
+}
+
+void AudioFramePacketizer::OnSyncedFrame(const Frame& frame)
+{
+    onFrameInternal(frame);
 }
 
 }

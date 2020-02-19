@@ -8,6 +8,7 @@ var AudioFrameConstructor = webrtcAddon.AudioFrameConstructor;
 var VideoFrameConstructor = webrtcAddon.VideoFrameConstructor;
 var AudioFramePacketizer = webrtcAddon.AudioFramePacketizer;
 var VideoFramePacketizer = webrtcAddon.VideoFramePacketizer;
+var SyncGroup = webrtcAddon.SyncGroup;
 
 var path = require('path');
 var logger = require('../logger').logger;
@@ -157,6 +158,7 @@ module.exports = function (spec, on_status, on_mediaUpdate) {
     audioFramePacketizer,
     videoFrameConstructor,
     videoFramePacketizer,
+    syncGroup,
     simulcastConstructors = [],
     stream,
     simStreams = [],
@@ -276,6 +278,11 @@ module.exports = function (spec, on_status, on_mediaUpdate) {
       videoFramePacketizer.close();
       videoFramePacketizer = undefined;
     }
+
+    if (syncGroup) {
+      syncGroup.close();
+      syncGroup = undefined;
+    }
   };
 
   var checkOffer = function (sdp, on_ok, on_error) {
@@ -367,8 +374,11 @@ module.exports = function (spec, on_status, on_mediaUpdate) {
       wrtc.setRemoteSsrc(aSsrc, vSsrc, '');
       wrtc.setSimulcastInfo(simulcastInfo);
     } else {
+      syncGroup = new SyncGroup();
+
       if (audio) {
         audioFramePacketizer = new AudioFramePacketizer();
+        audioFramePacketizer.setSyncGroup(syncGroup);
         audioFramePacketizer.bindTransport(wrtc.getMediaStream(wrtcId));
       }
       if (video) {
@@ -376,6 +386,7 @@ module.exports = function (spec, on_status, on_mediaUpdate) {
         const hasUlpfec = hasCodec(sdp, 'ulpfec');
         transportSeqNumExt = getExtId(sdp, TransportSeqNumUri);
         videoFramePacketizer = new VideoFramePacketizer(hasRed, hasUlpfec, transportSeqNumExt);
+        videoFramePacketizer.setSyncGroup(syncGroup);
         videoFramePacketizer.bindTransport(wrtc.getMediaStream(wrtcId));
       }
     }

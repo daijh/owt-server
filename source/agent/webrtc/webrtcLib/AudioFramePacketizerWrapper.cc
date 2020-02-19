@@ -12,6 +12,8 @@
 #include "MediaStream.h"
 #include <WebRtcConnection.h>
 
+#include "SyncGroupWrapper.h"
+
 using namespace v8;
 
 Persistent<Function> AudioFramePacketizer::constructor;
@@ -31,6 +33,7 @@ void AudioFramePacketizer::Init(v8::Local<v8::Object> exports) {
   NODE_SET_PROTOTYPE_METHOD(tpl, "unbindTransport", unbindTransport);
   NODE_SET_PROTOTYPE_METHOD(tpl, "enable", enable);
   NODE_SET_PROTOTYPE_METHOD(tpl, "ssrc", getSsrc);
+  NODE_SET_PROTOTYPE_METHOD(tpl, "setSyncGroup", setSyncGroup);
 
   constructor.Reset(isolate, tpl->GetFunction());
   exports->Set(String::NewFromUtf8(isolate, "AudioFramePacketizer"), tpl->GetFunction());
@@ -101,4 +104,17 @@ void AudioFramePacketizer::getSsrc(const v8::FunctionCallbackInfo<v8::Value>& ar
 
   uint32_t ssrc = me->getSsrc();
   args.GetReturnValue().Set(Number::New(isolate, ssrc));
+}
+
+void AudioFramePacketizer::setSyncGroup(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  Isolate* isolate = Isolate::GetCurrent();
+  HandleScope scope(isolate);
+
+  AudioFramePacketizer* obj = ObjectWrap::Unwrap<AudioFramePacketizer>(args.Holder());
+  owt_base::AudioFramePacketizer* me = obj->me;
+
+  SyncGroup* param = node::ObjectWrap::Unwrap<SyncGroup>(args[0]->ToObject());
+  owt_base::SyncGroup* syncGroup = param->me;
+
+  me->SetSyncGroup(syncGroup);
 }

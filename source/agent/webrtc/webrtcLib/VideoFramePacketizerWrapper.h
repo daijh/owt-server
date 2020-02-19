@@ -33,6 +33,7 @@ class VideoFramePacketizer : public FrameDestination {
   static void getSsrc(const v8::FunctionCallbackInfo<v8::Value>& args);
 
   static void setFoV(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void setSyncGroup(const v8::FunctionCallbackInfo<v8::Value>& args);
 };
 
 #endif
